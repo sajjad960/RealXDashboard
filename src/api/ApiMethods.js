@@ -40,6 +40,17 @@ export default class ApiMethods extends ApiBase {
     return resultData;
   }
 
+  async getDashboardData() {
+    const passingData = {
+      url: "/products/dashboard-details",
+      params: {},
+      fullResponse: false,
+      others: undefined,
+    };
+    const resultData = await this.get(passingData);
+    return resultData;
+  }
+
   async createPost(data) {
     const formData = new FormData();
 

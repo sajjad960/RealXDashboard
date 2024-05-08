@@ -13,6 +13,7 @@ import {
 } from "reactstrap";
 import { Mail, Lock } from "react-feather";
 import { useMutation } from "react-query";
+import { Check, Eye, EyeOff } from "react-feather";
 import { useHistory, Redirect } from "react-router-dom";
 import Checkbox from "../../../../components/@vuexy/checkbox/CheckboxesVuexy";
 import loginImg from "../../../../assets/img/pages/login.png";
@@ -21,7 +22,7 @@ import useApi from "../../../../hooks/useApi";
 import useSnackbarStatus from "../../../../hooks/useSnackbarStatus";
 import useRedirectIfTokenExists from "../../../../hooks/useRedirectIfTokenExists";
 import useProfile from "../../../../hooks/useProfile";
-import useAuthToken from "../../../../hooks/auth/useAuthToken"
+import useAuthToken from "../../../../hooks/auth/useAuthToken";
 
 const Login = () => {
   useRedirectIfTokenExists();
@@ -30,9 +31,9 @@ const Login = () => {
   const history = useHistory();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setpasswordVisible] = useState(false);
   const showMessage = useSnackbarStatus();
-  const {setAuthToken} = useAuthToken();
-
+  const { setAuthToken } = useAuthToken();
 
   const { mutate, isLoading } = useMutation((body) => api.login(body), {
     onSuccess: (data) => {
@@ -94,7 +95,7 @@ const Login = () => {
                     </FormGroup>
                     <FormGroup className="form-label-group position-relative has-icon-left">
                       <Input
-                        type="password"
+                        type={passwordVisible ? "text" : "password"}
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -103,6 +104,24 @@ const Login = () => {
                         <Lock size={15} />
                       </div>
                       <Label>Password</Label>
+                      <Button
+                        className="password-toggle-btn"
+                        onClick={() => setpasswordVisible(!passwordVisible)}
+                        style={{
+                          position: "absolute",
+                          top: "45%",
+                          right: "10px",
+                          transform: "translateY(-50%)",
+                          padding: "4px",
+                        }}
+                      >
+                        {passwordVisible ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}{" "}
+                        {/* Adjust the size as needed */}
+                      </Button>
                     </FormGroup>
                     <FormGroup className="d-flex justify-content-between align-items-center">
                       <div className="float-right">Forgot Password?</div>

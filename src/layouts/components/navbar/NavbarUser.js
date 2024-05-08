@@ -59,7 +59,6 @@ const NavbarUser = (props) => {
   };
 
   const { profile, errorProfile } = useProfile();
-  console.log(profile);
 
 
   return (

@@ -1,52 +1,61 @@
 import React from "react";
 import StatisticsCard from "../../components/@vuexy/statisticsCard/StatisticsCard";
-import { Row, Col } from "reactstrap";
-import {
-  Monitor,
-  UserCheck,
-  Mail,
-  Eye,
-  MessageSquare,
-  ShoppingBag,
-  Heart,
-  Smile,
-  Truck,
-  Cpu,
-  Server,
-  ShoppingCart,
-  BarChart,
-  Activity,
-  AlertOctagon,
-} from "react-feather";
+import { Row, Col, Spinner } from "reactstrap";
+import { ShoppingCart, Server, BarChart } from "react-feather";
 import BarCharts from "../chart/BarChart";
+import { cacheKeys } from "../../api/CacheKeys";
+import { useQuery } from "react-query";
+import useApi from "../../hooks/useApi";
+import useSnackbarStatus from "../../hooks/useSnackbarStatus";
 
-class Home extends React.Component {
-  render() {
-    return (
-      <div>
-        <Row>
-          <Col  lg="4" sm="6">
-          <StatisticsCard
+const Home = () => {
+  const api = useApi({ formData: false });
+  const showMessage = useSnackbarStatus();
+
+  const { data, isLoading } = useQuery({
+    queryKey: [cacheKeys.dashboard],
+    queryFn: () => api.getDashboardData(),
+    onError: (error) => {
+      showMessage(error?.message);
+    },
+  });
+  console.log(data);
+  return (
+    <div>
+      <Row>
+        <Col lg="4" sm="6">
+          {isLoading ? (
+            <Spinner color="primary" />
+          ) : (
+            <StatisticsCard
               hideChart
               iconRight
               iconBg="success"
-              icon={<ShoppingCart className="success" size={22}  />}
-              stat="20"
+              icon={<ShoppingCart className="success" size={22} />}
+              stat={data?.totalProductsCount}
               statTitle="Total Products"
             />
-          </Col>
-          <Col  lg="4" sm="6">
-          <StatisticsCard
+          )}
+        </Col>
+        <Col lg="4" sm="6">
+          {isLoading ? (
+            <Spinner color="primary" />
+          ) : (
+            <StatisticsCard
               hideChart
               iconRight
               iconBg="success"
               icon={<Server className="success" size={22} />}
-              stat="5"
+              stat={data?.activeProductCount}
               statTitle="Active Products"
             />
-          </Col>
-          <Col  lg="4" sm="6">
-          <StatisticsCard
+          )}
+        </Col>
+        <Col lg="4" sm="6">
+          {isLoading ? (
+            <Spinner color="primary" />
+          ) : (
+            <StatisticsCard
               hideChart
               iconRight
               iconBg="success"
@@ -54,12 +63,12 @@ class Home extends React.Component {
               stat="+20%"
               statTitle="Performance"
             />
-          </Col>
-        </Row>
-        <BarCharts/>
-      </div>
-    );
-  }
-}
+          )}
+        </Col>
+      </Row>
+      <BarCharts topProducts={data?.topProducts}/>
+    </div>
+  );
+};
 
 export default Home;
