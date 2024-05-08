@@ -1,15 +1,22 @@
 import React, { useState } from "react";
-import { Form, FormGroup, Input, Label, Button } from "reactstrap";
+import { Form, FormGroup, Input, Label, Button, Spinner } from "reactstrap";
 import Checkbox from "../../../../components/@vuexy/checkbox/CheckboxesVuexy";
 import { Check, Eye, EyeOff } from "react-feather";
 import { history } from "../../../../history";
 import { useMutation } from "react-query";
 import useApi from "../../../../hooks/useApi";
 import useSnackbarStatus from "../../../../hooks/useSnackbarStatus";
+import useProfile from "../../../../hooks/useProfile";
+import useRedirectIfTokenExists from "../../../../hooks/useRedirectIfTokenExists";
+import useAuthToken from "../../../../hooks/auth/useAuthToken"
+
 
 const RegisterJWT = () => {
+  useRedirectIfTokenExists();
   const api = useApi({ formData: false });
   const showMessage = useSnackbarStatus();
+  const { setProfile } = useProfile();
+  const {setAuthToken} = useAuthToken();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -76,9 +83,12 @@ const RegisterJWT = () => {
     }));
   };
 
-  const { mutate } = useMutation((body) => api.register(body), {
+  const { mutate, isLoading } = useMutation((body) => api.register(body), {
     onSuccess: (data) => {
       console.log(data);
+      setAuthToken(data?.token);
+      setProfile(data);
+      history.push("/");
     },
     onError: (error) => {
       console.log(error);
@@ -94,7 +104,7 @@ const RegisterJWT = () => {
       passwordVisible: undefined,
       confirmPasswordVisible: undefined,
     };
-    mutate(body)
+    mutate(body);
   };
 
   const isFormValid = () => {
@@ -234,9 +244,13 @@ const RegisterJWT = () => {
         >
           Login
         </Button.Ripple>
-        <Button.Ripple color="primary" type="submit" disabled={isFormValid()}>
-          Register
-        </Button.Ripple>
+        {isLoading ? (
+          <Spinner color="primary" />
+        ) : (
+          <Button.Ripple color="primary" type="submit" disabled={isFormValid()}>
+            Register
+          </Button.Ripple>
+        )}
       </div>
     </Form>
   );

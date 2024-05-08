@@ -9,6 +9,7 @@ import {
   FormGroup,
   Input,
   Label,
+  Spinner,
 } from "reactstrap";
 import { Mail, Lock } from "react-feather";
 import { useMutation } from "react-query";
@@ -16,31 +17,33 @@ import { useHistory, Redirect } from "react-router-dom";
 import Checkbox from "../../../../components/@vuexy/checkbox/CheckboxesVuexy";
 import loginImg from "../../../../assets/img/pages/login.png";
 import "../../../../assets/scss/pages/authentication.scss";
-import { getToken, setToken } from "../../../../utility/helpers";
 import useApi from "../../../../hooks/useApi";
 import useSnackbarStatus from "../../../../hooks/useSnackbarStatus";
 import useRedirectIfTokenExists from "../../../../hooks/useRedirectIfTokenExists";
 import useProfile from "../../../../hooks/useProfile";
+import useAuthToken from "../../../../hooks/auth/useAuthToken"
 
 const Login = () => {
-  useRedirectIfTokenExists()
+  useRedirectIfTokenExists();
   const api = useApi({ formData: false });
   const { setProfile } = useProfile();
   const history = useHistory();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const showMessage = useSnackbarStatus();
+  const {setAuthToken} = useAuthToken();
 
 
-  const { mutate } = useMutation((body) => api.login(body), {
+  const { mutate, isLoading } = useMutation((body) => api.login(body), {
     onSuccess: (data) => {
       console.log(data);
-      setToken(data?.token)
-      setProfile(data?.user)
+      setAuthToken(data?.token);
+      setProfile(data);
+      history.push("/");
     },
     onError: (error) => {
       console.log(error);
-      showMessage(error.message)
+      showMessage(error.message);
     },
   });
 
@@ -112,9 +115,13 @@ const Login = () => {
                       >
                         Register
                       </Button.Ripple>
-                      <Button.Ripple color="primary" type="submit">
-                        Login
-                      </Button.Ripple>
+                      {isLoading ? (
+                        <Spinner color="primary" />
+                      ) : (
+                        <Button.Ripple color="primary" type="submit">
+                          Login
+                        </Button.Ripple>
+                      )}
                     </div>
                   </form>
                 </CardBody>
