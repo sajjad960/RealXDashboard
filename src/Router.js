@@ -30,15 +30,15 @@ const RouteConfig = ({ component: Component, fullLayout, ...rest }) => (
     render={(props) => {
       // if client not authenticated redirect login
       const token = getToken();
-      // if (
-      //   props.location.pathname !== "/login" &&
-      //   !token &&
-      //   props.location.pathname !== "/register" &&
-      //   props.location.pathname !== "/forgot-password" &&
-      //   props.location.pathname !== "/reset-password"
-      // ) {
-      //   return <Redirect to="/login" />;
-      // }
+      if (
+        props.location.pathname !== "/login" &&
+        !token &&
+        props.location.pathname !== "/register" &&
+        props.location.pathname !== "/forgot-password" &&
+        props.location.pathname !== "/reset-password"
+      ) {
+        return <Redirect to="/login" />;
+      }
       return (
         <ContextLayout.Consumer>
           {(context) => {

@@ -6,7 +6,6 @@ class ProductsView extends React.Component {
   render() {
     return (
       <React.Fragment>
-    
         <Row>
           <Col sm="12">
             <ThumbViewConfig thumbView={true} parsedFilter={queryString.parse(this.props.location.search)}/>

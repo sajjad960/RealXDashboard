@@ -128,7 +128,11 @@ const CustomHeader = (props) => {
           </DropdownMenu>
         </UncontrolledDropdown>
         <div className="filter-section">
-          <Input type="text" placeholder="Search By Product Name" onChange={(e) => props.handleFilter(e)} />
+          <Input
+            type="text"
+            placeholder="Search By Product Name"
+            onChange={(e) => props.handleFilter(e)}
+          />
         </div>
       </div>
     </div>
@@ -364,12 +368,8 @@ class DataListConfig extends Component {
   handlePagination = (page) => {
     let { parsedFilter, getData } = this.props;
     let perPage = parsedFilter.perPage !== undefined ? parsedFilter.perPage : 4;
-    let urlPrefix = this.props.thumbView
-      ? "/data-list/thumb-view/"
-      : "/data-list/list-view/";
-    history.push(
-      `${urlPrefix}list-view?page=${page.selected + 1}&perPage=${perPage}`
-    );
+
+    history.push(`products?page=${page.selected + 1}&perPage=${perPage}`);
     getData({ page: page.selected + 1, perPage: perPage });
     this.setState({ currentPage: page.selected });
   };
