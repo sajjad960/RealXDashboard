@@ -1,7 +1,7 @@
 export const cacheKeys = {
     profile: "profile",
     dashboard: "dashboard",
-    comments: "comments",
+    products: "products",
     replies: "replies"
   };
   

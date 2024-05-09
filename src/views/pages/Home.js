@@ -19,7 +19,6 @@ const Home = () => {
       showMessage(error?.message);
     },
   });
-  console.log(data);
   return (
     <div>
       <Row>

@@ -51,16 +51,17 @@ export default class ApiMethods extends ApiBase {
     return resultData;
   }
 
-  async createPost(data) {
+  async createProduct(data) {
     const formData = new FormData();
 
-    formData.append("text", data?.text);
-    data.images.forEach((image) => {
-      formData.append("images", image);
-    });
+    Object.keys(data).forEach((item) => {
+      formData.append(item, data[item]);
+    })
 
+    console.log("maked Data", formData);
+  
     const passingData = {
-      url: "/posts",
+      url: `/products?url=${data?.url}`,
       data: formData,
       fullResponse: false,
       others: undefined,
@@ -69,9 +70,9 @@ export default class ApiMethods extends ApiBase {
     return resultData;
   }
 
-  async getPosts(filters) {
+  async getProducts(filters) {
     const passingData = {
-      url: "/posts",
+      url: "/products",
       params: filters,
       fullResponse: false,
       others: undefined,
