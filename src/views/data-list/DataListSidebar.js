@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Label, Input, FormGroup, Button } from "reactstrap";
+import { Label, Input, FormGroup, Button, Spinner } from "reactstrap";
 import { X } from "react-feather";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import classnames from "classnames";
@@ -17,7 +17,7 @@ const DataListSidebar = ({
   dataParams,
   getData,
 }) => {
-  const api = useApi({ formData: false });
+  const api = useApi({ formData: true });
   const showMessage = useSnackbarStatus();
   const [formData, setFormData] = useState({
     url: "",
@@ -28,6 +28,8 @@ const DataListSidebar = ({
     model_placement: "",
   });
   const [addNew, setAddNew] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
 
   useEffect(() => {
     if (data !== null) {
@@ -39,7 +41,7 @@ const DataListSidebar = ({
         usdzFile: "",
         glbFile: "",
         poster: "",
-        model_placement: "",
+        model_placement: "floor",
       });
     }
     setAddNew(false);
@@ -48,17 +50,26 @@ const DataListSidebar = ({
   const updateFile = (type, newValue) => {
     setFormData({ ...formData, [type]: newValue });
   };
-
-  const { mutate, isLoading } = useMutation((body) => api.createProduct(body), {
-    onSuccess: (data) => {
-      console.log(data);
+console.log(formData);
+  const { mutate, isLoading: isLoadingCreate } = useMutation(
+    (body) => api.createProduct(body),
+    {
+      onSuccess: (data) => {
+        console.log(data);
+      },
+      onError: (error) => {
+        console.log(error);
+        showMessage(error.message);
+      },
+      onUploadProgress: (progressEvent) => {
+        const { loaded, total } = progressEvent;
+        const progress = (loaded / total) * 100;
+        console.log({progress});
+        // setUploadProgress(progress); // Update upload progress state
+      },
     },
-    onError: (error) => {
-      console.log(error);
-      showMessage(error.message);
-    },
-  });
-
+    
+  );
 
   const handleSubmit = () => {
     // if (data !== null) {
@@ -73,7 +84,7 @@ const DataListSidebar = ({
     // handleSidebar(false, true);
     // getData(params);
     console.log("old formdat", formData);
-    mutate(formData)
+    mutate(formData);
   };
 
   const { url, name, model_placement } = formData;
@@ -99,6 +110,7 @@ const DataListSidebar = ({
           <Input
             type="text"
             value={name}
+            required
             placeholder="Product Name"
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             id="data-name"
@@ -113,6 +125,7 @@ const DataListSidebar = ({
           <Input
             type="text"
             value={url}
+            required
             placeholder="Product Url"
             onChange={(e) => setFormData({ ...formData, url: e.target.value })}
             id="data-name"
@@ -177,9 +190,14 @@ const DataListSidebar = ({
         </FormGroup>
       </PerfectScrollbar>
       <div className="data-list-sidebar-footer px-2 d-flex justify-content-start align-items-center mt-1">
-        <Button color="primary" onClick={handleSubmit}>
-          {data !== null ? "Update" : "Submit"}
-        </Button>
+        {isLoadingCreate ? (
+          <Spinner color="primary" />
+        ) : (
+          <Button color="primary" onClick={handleSubmit}>
+            {data !== null ? "Update" : "Submit"}
+          </Button>
+        )}
+
         <Button
           className="ml-1"
           color="danger"

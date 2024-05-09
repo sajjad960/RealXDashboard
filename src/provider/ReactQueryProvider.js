@@ -9,6 +9,7 @@ const ReactQueryProvider = ({ children }) => {
           queries: {
             refetchOnWindowFocus: false,
             refetchOnMount: true,
+            staleTime: 300000
           },
           mutations: {},
         },

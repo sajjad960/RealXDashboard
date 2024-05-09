@@ -83,8 +83,9 @@ const Login = () => {
                     <FormGroup className="form-label-group position-relative has-icon-left">
                       <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder="Email*"
                         name="email"
+                        required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
@@ -96,7 +97,8 @@ const Login = () => {
                     <FormGroup className="form-label-group position-relative has-icon-left">
                       <Input
                         type={passwordVisible ? "text" : "password"}
-                        placeholder="Password"
+                        placeholder="Password*"
+                        required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />

@@ -28,7 +28,7 @@ import { useQuery } from "react-query";
 import { cacheKeys } from "../../api/CacheKeys";
 import useApi from "../../hooks/useApi";
 import useSnackbarStatus from "../../hooks/useSnackbarStatus";
-
+import { FormGroup } from "reactstrap";
 
 import "../../assets/scss/plugins/extensions/react-paginate.scss";
 import "../../assets/scss/pages/data-list.scss";
@@ -39,8 +39,8 @@ const chipColors = {
 };
 const statusName = {
   1: "active",
-  0: "inactive"
-}
+  0: "inactive",
+};
 
 const selectedStyle = {
   rows: {
@@ -103,6 +103,59 @@ const CustomHeader = (props) => {
   );
 };
 
+const StatusDropdown = ({ row, updateStatus }) => {
+  const [status, setStatus] = useState(row.status);
+
+  const handleChange = (e) => {
+    const newStatus = e.target.value;
+    setStatus(newStatus);
+    updateStatus(row.id, newStatus);
+  };
+
+  return (
+    <FormGroup>
+      <Input
+        type="select"
+        value={status}
+        onChange={handleChange}
+        style={{
+          backgroundColor:
+            chipColors[status] === "success" ? "rgb(143 217 112)" : "#F8D7DA",
+          cursor: "pointer",
+          fontWeight: "500",
+          textAlign: "center",
+          marginTop: "1.5rem"
+        }}
+      >
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </Input>
+    </FormGroup>
+  );
+};
+
+const ImageWithLoading = ({ src, alt }) => {
+  const [loading, setLoading] = useState(true);
+
+  const handleImageLoaded = () => {
+    setLoading(false); // Set loading to false when the image is loaded
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {loading && src && <div>Loading...</div>}
+      <img
+        src={src}
+        alt={alt}
+        height="100"
+        onLoad={handleImageLoaded} // Call handleImageLoaded when the image is loaded
+        style={{ display: loading ? 'none' : 'block' }} // Hide the image while loading
+      />
+    </div>
+  );
+};
+
+
 const DataListConfig = () => {
   const api = useApi({ formData: false });
   const showMessage = useSnackbarStatus();
@@ -153,14 +206,16 @@ const DataListConfig = () => {
       showMessage(error?.message);
     },
   });
-console.log("product data", data);
+  console.log("product data", data);
 
   let columns = [
     {
-      name: "Image",
-      selector: "img",
-      minWidth: "220px",
-      cell: (row) => <img src={JSON.parse(row?.poster)?.posterFileLink} height="100" alt={row?.name ?? ""} />,
+      name: 'Image',
+      selector: 'img',
+      minWidth: '220px',
+      cell: (row) => (
+        <ImageWithLoading src={JSON.parse(row?.poster)?.posterFileLink} alt={row?.name ?? ''} />
+      ),
     },
     {
       name: "Name",
@@ -195,13 +250,7 @@ console.log("product data", data);
       name: "Status",
       selector: "status",
       sortable: true,
-      cell: (row) => (
-        <Chip
-          className="m-0"
-          color={chipColors[row?.status]}
-          text={statusName[row?.status]}
-        />
-      ),
+      cell: (row) => <StatusDropdown row={row} updateStatus={updateStatus} />,
     },
     {
       name: "Views",
@@ -320,6 +369,8 @@ console.log("product data", data);
     // setCurrentPage(page.selected);
   };
 
+  const updateStatus = () => {};
+
   return (
     <div className={`data-list ${thumbView ? "thumb-view" : "list-view"}`}>
       {/* DataTable component with required props */}
@@ -375,22 +426,22 @@ console.log("product data", data);
         }}
       />
       <Sidebar
-          show={sidebar}
-          data={currentData}
-          // updateData={this.props.updateData}
-          // addData={this.props.addData}
-          handleSidebar={handleSidebar}
-          thumbView={thumbView}
-          // getData={this.props.getData}
-          // dataParams={this.props.parsedFilter}
-          addNew={addNew}
-        />
-        <div
-          className={classnames("data-list-overlay", {
-            show: sidebar,
-          })}
-          onClick={() => handleSidebar(false, true)}
-        />
+        show={sidebar}
+        data={currentData}
+        // updateData={this.props.updateData}
+        // addData={this.props.addData}
+        handleSidebar={handleSidebar}
+        thumbView={thumbView}
+        // getData={this.props.getData}
+        // dataParams={this.props.parsedFilter}
+        addNew={addNew}
+      />
+      <div
+        className={classnames("data-list-overlay", {
+          show: sidebar,
+        })}
+        onClick={() => handleSidebar(false, true)}
+      />
     </div>
   );
 };
