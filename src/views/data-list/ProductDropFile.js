@@ -10,7 +10,6 @@ function BasicDropzone(props) {
     if (props.dropFileType === "poster") return "image/*";
     if (props.dropFileType === "usdzFile") return ".usdz";
   }
-  console.log(dynamicFileType(), props);
   const { getRootProps, getInputProps } = useDropzone({
     accept: dynamicFileType(),
     onDrop: (acceptedFiles) => {

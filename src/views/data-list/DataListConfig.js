@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Button,
   Progress,
@@ -24,11 +24,13 @@ import {
 import Sidebar from "./DataListSidebar";
 import Chip from "../../components/@vuexy/chips/ChipComponent";
 import Checkbox from "../../components/@vuexy/checkbox/CheckboxesVuexy";
-import { useQuery } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import { cacheKeys } from "../../api/CacheKeys";
 import useApi from "../../hooks/useApi";
 import useSnackbarStatus from "../../hooks/useSnackbarStatus";
 import { FormGroup } from "reactstrap";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import Spinner from "../../components/@vuexy/spinner/Loading-spinner";
 
 import "../../assets/scss/plugins/extensions/react-paginate.scss";
 import "../../assets/scss/pages/data-list.scss";
@@ -36,10 +38,6 @@ import "../../assets/scss/pages/data-list.scss";
 const chipColors = {
   1: "success",
   0: "danger",
-};
-const statusName = {
-  1: "active",
-  0: "inactive",
 };
 
 const selectedStyle = {
@@ -124,7 +122,9 @@ const StatusDropdown = ({ row, updateStatus }) => {
           cursor: "pointer",
           fontWeight: "500",
           textAlign: "center",
-          marginTop: "1.5rem"
+          marginTop: "1.5rem",
+          width: "100",
+          padding: "6px",
         }}
       >
         <option value="1">Active</option>
@@ -142,50 +142,23 @@ const ImageWithLoading = ({ src, alt }) => {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: "relative" }}>
       {loading && src && <div>Loading...</div>}
       <img
         src={src}
         alt={alt}
         height="100"
         onLoad={handleImageLoaded} // Call handleImageLoaded when the image is loaded
-        style={{ display: loading ? 'none' : 'block' }} // Hide the image while loading
+        style={{ display: loading ? "none" : "block" }} // Hide the image while loading
       />
     </div>
   );
 };
 
-
 const DataListConfig = () => {
   const api = useApi({ formData: false });
+  const queryClient = useQueryClient()
   const showMessage = useSnackbarStatus();
-  // const [data, setData] = useState([{
-  //   id: 1,
-  //   order_status: "on hold",
-  //   name: "Apple Watch series 4 GPS",
-  //   category: "Computers",
-  //   price: "69.99",
-  //   popularity: { popValue: "97", color: "success" },
-  //   img: require("../../assets/img/elements/apple-watch.png")
-  // },
-  // {
-  //   id: 2,
-  //   popularity: { popValue: "83", color: "success" },
-  //   img: require("../../assets/img/elements/iphone-x.png"),
-  //   order_status: "delivered",
-  //   name: "Beats HeadPhones",
-  //   category: "Computers",
-  //   price: "69.99"
-  // },
-  // {
-  //   id: 3,
-  //   price: "199.99",
-  //   popularity: { popValue: "57", color: "warning" },
-  //   img: require("../../assets/img/elements/homepod.png"),
-  //   order_status: "canceled",
-  //   name: "Altec Lansing - Bluetooth Speaker",
-  //   category: "Audio"
-  // },]);
   const [allData, setAllData] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -198,6 +171,10 @@ const DataListConfig = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [sortIndex, setSortIndex] = useState([]);
   const [addNew, setAddNew] = useState("");
+  const [copyDetails, setcopyDetails] = useState({
+    copied: false,
+    rowId: "",
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: [cacheKeys.products],
@@ -206,15 +183,53 @@ const DataListConfig = () => {
       showMessage(error?.message);
     },
   });
-  console.log("product data", data);
+
+  const { mutate: mutateUpdate } = useMutation(
+    (body) => api.updateProduct(body),
+    {
+      onSuccess: (data) => {
+        showMessage(data?.message, "success");
+        queryClient.setQueryData([cacheKeys.products], (prevData) => {
+          console.log("previous data", prevData);
+          const updatedData = prevData?.data?.map((item) => {
+            console.log(item?.id, data);
+            if(item?.id === data?.product?.id) {
+              return {...item, status: Number(data?.product?.status)}
+            }
+            return item;
+          })
+          console.log("updated data", updatedData);
+
+          return {
+            ...prevData,
+            data: updatedData
+          }
+        })
+        
+      },
+      onError: (error) => {
+        console.log(error);
+        showMessage(error.message);
+      },
+    }
+  );
+
+  const memoizedData = useMemo(() => {
+    console.log("product data", data);
+    // Expensive computation here
+    return data;
+  }, [data]);
 
   let columns = [
     {
-      name: 'Image',
-      selector: 'img',
-      minWidth: '220px',
+      name: "Image",
+      selector: "img",
+      minWidth: "220px",
       cell: (row) => (
-        <ImageWithLoading src={JSON.parse(row?.poster)?.posterFileLink} alt={row?.name ?? ''} />
+        <ImageWithLoading
+          src={JSON.parse(row?.poster)?.posterFileLink}
+          alt={row?.name ?? ""}
+        />
       ),
     },
     {
@@ -233,6 +248,30 @@ const DataListConfig = () => {
       selector: "url",
       sortable: true,
       cell: (row) => `${row?.url}`,
+    },
+    {
+      name: "Usdz",
+      selector: "usdz",
+      sortable: true,
+      cell: (row) => {
+        if (JSON.parse(row?.models)?.[0].usdzFile?.usdzFileLink) {
+          return "Available";
+        } else {
+          return "Null";
+        }
+      },
+    },
+    {
+      name: "Glb",
+      selector: "glb",
+      sortable: true,
+      cell: (row) => {
+        if (JSON.parse(row?.models)?.[0].glbFile?.glbFileLink) {
+          return "Available";
+        } else {
+          return "Null";
+        }
+      },
     },
     // {
     //   name: "Popularity",
@@ -257,6 +296,51 @@ const DataListConfig = () => {
       selector: "product_views",
       sortable: true,
       cell: (row) => `${row?.product_log_details?.product_views ?? 0}`,
+    },
+    {
+      name: "Links",
+      selector: "link",
+      cell: (row) => {
+        const genaratedLink = `https://mysellbee.com/view/ar/user_id=${row?.user_id}/url=${row?.url}`;
+        return (
+          <div>
+            <CopyToClipboard
+              text={genaratedLink}
+              onCopy={() =>
+                setcopyDetails({
+                  ...copyDetails,
+                  copied: true,
+                  rowId: row?.id,
+                })
+              }
+            >
+              {copyDetails?.copied && copyDetails?.rowId === row?.id ? (
+                <button
+                  style={{
+                    backgroundColor: "#000000d6",
+                    color: "white",
+                    padding: "5px",
+                    borderRadius: "5px",
+                  }}
+                >
+                  Copied
+                </button>
+              ) : (
+                <button
+                  style={{
+                    backgroundColor: "black",
+                    color: "white",
+                    padding: "9px",
+                    borderRadius: "5px",
+                  }}
+                >
+                  Copy
+                </button>
+              )}
+            </CopyToClipboard>
+          </div>
+        );
+      },
     },
     {
       name: "Actions",
@@ -369,14 +453,26 @@ const DataListConfig = () => {
     // setCurrentPage(page.selected);
   };
 
-  const updateStatus = () => {};
+  const updateStatus = (id, status) => {
+    console.log("update sta", id, status);
+    const body = {
+      status: Number(status),
+      product_id: id,
+      url: ""
+    }
+    mutateUpdate(body)
+  };
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className={`data-list ${thumbView ? "thumb-view" : "list-view"}`}>
       {/* DataTable component with required props */}
       <DataTable
         columns={columns}
-        data={value.length ? allData : data?.data}
+        data={value.length ? allData : memoizedData?.data}
         pagination
         paginationServer
         paginationComponent={() => (

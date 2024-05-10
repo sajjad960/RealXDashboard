@@ -69,6 +69,25 @@ export default class ApiMethods extends ApiBase {
     const resultData = await this.post(passingData);
     return resultData;
   }
+  async updateProduct(data) {
+    const formData = new FormData();
+
+    Object.keys(data).forEach((item) => {
+      formData.append(item, data[item]);
+    })
+
+    console.log("maked Data", formData);
+  
+    const passingData = {
+      url: `/products/update?url=${data?.url}`,
+      data: formData,
+      fullResponse: false,
+      others: undefined,
+    };
+    const resultData = await this.post(passingData);
+    return resultData;
+  }
+
 
   async getProducts(filters) {
     const passingData = {

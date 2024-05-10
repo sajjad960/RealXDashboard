@@ -4,20 +4,14 @@ import { X } from "react-feather";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import classnames from "classnames";
 import ProductDropFile from "./ProductDropFile";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import useApi from "../../hooks/useApi";
 import useSnackbarStatus from "../../hooks/useSnackbarStatus";
+import { cacheKeys } from "../../api/CacheKeys";
 
-const DataListSidebar = ({
-  show,
-  handleSidebar,
-  data,
-  updateData,
-  addData,
-  dataParams,
-  getData,
-}) => {
+const DataListSidebar = ({ show, handleSidebar, data }) => {
   const api = useApi({ formData: true });
+  const queryClient = useQueryClient()
   const showMessage = useSnackbarStatus();
   const [formData, setFormData] = useState({
     url: "",
@@ -28,12 +22,16 @@ const DataListSidebar = ({
     model_placement: "",
   });
   const [addNew, setAddNew] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-
   useEffect(() => {
     if (data !== null) {
-      setFormData(data);
+      setFormData({
+        url: data?.url,
+        name: data?.name,
+        usdzFile: "",
+        glbFile: "",
+        poster: "",
+        model_placement: data?.model_placement,
+      });
     } else {
       setFormData({
         url: "",
@@ -50,41 +48,53 @@ const DataListSidebar = ({
   const updateFile = (type, newValue) => {
     setFormData({ ...formData, [type]: newValue });
   };
-console.log(formData);
-  const { mutate, isLoading: isLoadingCreate } = useMutation(
+
+  const { mutate: mutateCreate, isLoading: isLoadingCreate } = useMutation(
     (body) => api.createProduct(body),
     {
       onSuccess: (data) => {
-        console.log(data);
+        showMessage(data?.message, "success");
+        queryClient.invalidateQueries(cacheKeys.products);
       },
       onError: (error) => {
         console.log(error);
         showMessage(error.message);
       },
-      onUploadProgress: (progressEvent) => {
-        const { loaded, total } = progressEvent;
-        const progress = (loaded / total) * 100;
-        console.log({progress});
-        // setUploadProgress(progress); // Update upload progress state
+    }
+  );
+
+  const { mutate: mutateUpdate, isLoading: isLoadingUpdate } = useMutation(
+    (body) => api.updateProduct(body),
+    {
+      onSuccess: (data) => {
+        showMessage(data?.message, "success");
+        queryClient.invalidateQueries(cacheKeys.products);
       },
-    },
-    
+      onError: (error) => {
+        console.log(error);
+        showMessage(error.message);
+      },
+    }
   );
 
   const handleSubmit = () => {
-    // if (data !== null) {
-    //   updateData(formData);
-    // } else {
-    //   setAddNew(true);
-    //   addData(formData);
-    // }
+    if (data !== null) {
+      const body = {
+        ...formData,
+        product_id: data?.id,
+        url: formData?.url === data?.url ? "" : formData?.url,
+      };
+      mutateUpdate(body);
+    } else {
+      setAddNew(true);
+      mutateCreate(formData);
+    }
     // const params = Object.keys(dataParams).length
     //   ? dataParams
     //   : { page: 1, perPage: 4 };
     // handleSidebar(false, true);
     // getData(params);
-    console.log("old formdat", formData);
-    mutate(formData);
+    
   };
 
   const { url, name, model_placement } = formData;
@@ -190,7 +200,7 @@ console.log(formData);
         </FormGroup>
       </PerfectScrollbar>
       <div className="data-list-sidebar-footer px-2 d-flex justify-content-start align-items-center mt-1">
-        {isLoadingCreate ? (
+        {isLoadingCreate || isLoadingUpdate ? (
           <Spinner color="primary" />
         ) : (
           <Button color="primary" onClick={handleSubmit}>
