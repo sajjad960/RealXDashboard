@@ -11,7 +11,7 @@ import { cacheKeys } from "../../api/CacheKeys";
 
 const DataListSidebar = ({ show, handleSidebar, data }) => {
   const api = useApi({ formData: true });
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const showMessage = useSnackbarStatus();
   const [formData, setFormData] = useState({
     url: "",
@@ -55,6 +55,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
       onSuccess: (data) => {
         showMessage(data?.message, "success");
         queryClient.invalidateQueries(cacheKeys.products);
+        queryClient.invalidateQueries(cacheKeys.dashboard);
       },
       onError: (error) => {
         console.log(error);
@@ -94,8 +95,8 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
     //   : { page: 1, perPage: 4 };
     // handleSidebar(false, true);
     // getData(params);
-    
   };
+  console.log("form Data", formData);
 
   const { url, name, model_placement } = formData;
 
@@ -192,7 +193,9 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
             type="select"
             id="model-placement"
             value={model_placement}
-            onChange={(e) => setFormData({ model_placement: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, model_placement: e.target.value })
+            }
           >
             <option value="floor">Floor</option>
             <option value="wall">Wall</option>

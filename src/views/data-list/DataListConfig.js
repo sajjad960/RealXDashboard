@@ -157,7 +157,7 @@ const ImageWithLoading = ({ src, alt }) => {
 
 const DataListConfig = () => {
   const api = useApi({ formData: false });
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const showMessage = useSnackbarStatus();
   const [allData, setAllData] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -188,24 +188,33 @@ const DataListConfig = () => {
     (body) => api.updateProduct(body),
     {
       onSuccess: (data) => {
-        showMessage(data?.message, "success");
+        if (Number(data?.product?.status) === 4) {
+          showMessage("Product has beed deleted", "error");
+        } else {
+          showMessage(data?.message, "success");
+        }
         queryClient.setQueryData([cacheKeys.products], (prevData) => {
-          console.log("previous data", prevData);
-          const updatedData = prevData?.data?.map((item) => {
-            console.log(item?.id, data);
-            if(item?.id === data?.product?.id) {
-              return {...item, status: Number(data?.product?.status)}
-            }
-            return item;
-          })
-          console.log("updated data", updatedData);
-
+          let updatedData;
+          // For removing deleted product depends on status
+          if (Number(data?.product?.status) === 4) {
+            updatedData = prevData?.data?.filter(
+              (item) => item?.id !== data?.product?.id
+            );
+          } else {
+            // For updating status on product.
+            updatedData = prevData?.data?.map((item) => {
+              if (item?.id === data?.product?.id) {
+                return { ...item, status: Number(data?.product?.status) };
+              }
+              return item;
+            });
+          }
           return {
             ...prevData,
-            data: updatedData
-          }
-        })
-        
+            data: updatedData,
+          };
+        });
+        queryClient.invalidateQueries(cacheKeys.dashboard);
       },
       onError: (error) => {
         console.log(error);
@@ -425,20 +434,12 @@ const DataListConfig = () => {
   };
 
   const handleDelete = (row) => {
-    // deleteData(row);
-    // getData(parsedFilter);
-    // if (data.length - 1 === 0) {
-    //   let urlPrefix = thumbView
-    //     ? "/data-list/thumb-view/"
-    //     : "/data-list/list-view/";
-    //   history.push(
-    //     `${urlPrefix}list-view?page=${parseInt(parsedFilter.page - 1)}&perPage=${parsedFilter.perPage}`
-    //   );
-    //   getData({
-    //     page: parsedFilter.page - 1,
-    //     perPage: parsedFilter.perPage,
-    //   });
-    // }
+    const body = {
+      status: 4,
+      product_id: row?.id,
+      url: "",
+    };
+    mutateUpdate(body);
   };
 
   const handleCurrentData = (obj) => {
@@ -458,9 +459,9 @@ const DataListConfig = () => {
     const body = {
       status: Number(status),
       product_id: id,
-      url: ""
-    }
-    mutateUpdate(body)
+      url: "",
+    };
+    mutateUpdate(body);
   };
 
   if (isLoading) {
