@@ -16,12 +16,18 @@ import Autocomplete from "../../../components/@vuexy/autoComplete/AutoCompleteCo
 import { history } from "../../../history";
 import useAuthToken from "../../../hooks/auth/useAuthToken";
 import useProfile from "../../../hooks/useProfile";
+import { useQueryClient } from 'react-query';
+
 
 const UserDropdown = (props) => {
   const { setAuthToken } = useAuthToken();
+  const queryClient = useQueryClient();
+
 
   const handleLogout = () => {
     setAuthToken(null);
+    queryClient.clear();
+
   };
   return (
     <DropdownMenu right>

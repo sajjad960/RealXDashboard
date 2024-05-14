@@ -68,7 +68,7 @@ const ActionsComponent = (props) => {
 };
 
 const CustomHeader = (props) => {
-  const { name } = props.filterValues;
+  // const { name } = props.filterValues;
   const debouncedHandleFilter = AwesomeDebouncePromise(props.handleFilter, 500);
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -94,6 +94,7 @@ const CustomHeader = (props) => {
           <Input
             type="text"
             name="name"
+            className="border-black"
             // value={name}
             placeholder="Search By Product Name"
             onChange={handleInputChange}
@@ -448,6 +449,17 @@ const DataListConfig = () => {
 
   return (
     <div className={`data-list list-view}`}>
+      <div className="mt-2">
+        <CustomHeader
+                handleSidebar={handleSidebar}
+                handleFilter={handleFilter}
+                filterValues={filters}
+                // handleRowsPerPage={handleRowsPerPage}
+                // rowsPerPage={rowsPerPage}
+                // total={totalRecords}
+                // index={sortIndex}
+              />
+      </div>
       {/* DataTable component with required props */}
       {isLoading || isFetching ? (
         <div className="mt-lg-5">
@@ -473,7 +485,7 @@ const DataListConfig = () => {
             />
           )}
           noHeader
-          subHeader
+          // subHeader
           // selectableRows
           responsive
           pointerOnHover
@@ -482,17 +494,6 @@ const DataListConfig = () => {
           //   this.setState({ selected: data.selectedRows })
           // }
           customStyles={selectedStyle}
-          subHeaderComponent={
-            <CustomHeader
-              handleSidebar={handleSidebar}
-              handleFilter={handleFilter}
-              filterValues={filters}
-              // handleRowsPerPage={handleRowsPerPage}
-              // rowsPerPage={rowsPerPage}
-              // total={totalRecords}
-              // index={sortIndex}
-            />
-          }
           sortIcon={<ChevronDown />}
           selectableRowsComponent={Checkbox}
           selectableRowsComponentProps={{
