@@ -207,7 +207,7 @@ const DataListConfig = () => {
   useEffect(() => {
     refetch();
   }, [filters, refetch]);
-  console.log(isLoading, "isloading");
+  
   const { mutate: mutateUpdate } = useMutation(
     (body) => api.updateProduct(body),
     {

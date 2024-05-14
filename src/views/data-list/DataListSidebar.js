@@ -22,6 +22,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
     model_placement: "",
   });
   const [addNew, setAddNew] = useState(false);
+  const [resetFiles, setresetFiles] = useState(false);
   useEffect(() => {
     if (data !== null) {
       setFormData({
@@ -53,9 +54,21 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
     (body) => api.createProduct(body),
     {
       onSuccess: (data) => {
+        setresetFiles(false);
         showMessage(data?.message, "success");
         queryClient.invalidateQueries(cacheKeys.products);
         queryClient.invalidateQueries(cacheKeys.dashboard);
+
+        // clear state
+        setFormData({
+          url: "",
+          name: "",
+          usdzFile: "",
+          glbFile: "",
+          poster: "",
+          model_placement: "floor",
+        });
+        setresetFiles(true);
       },
       onError: (error) => {
         console.log(error);
@@ -68,8 +81,20 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
     (body) => api.updateProduct(body),
     {
       onSuccess: (data) => {
+        setresetFiles(false);
         showMessage(data?.message, "success");
         queryClient.invalidateQueries(cacheKeys.products);
+
+        // clear State
+        setFormData({
+          url: data?.product?.url,
+          name: data?.product?.name,
+          usdzFile: "",
+          glbFile: "",
+          poster: "",
+          model_placement: data?.product?.model_placement,
+        });
+        setresetFiles(true);
       },
       onError: (error) => {
         console.log(error);
@@ -90,13 +115,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
       setAddNew(true);
       mutateCreate(formData);
     }
-    // const params = Object.keys(dataParams).length
-    //   ? dataParams
-    //   : { page: 1, perPage: 4 };
-    // handleSidebar(false, true);
-    // getData(params);
   };
-  console.log("form Data", formData);
 
   const { url, name, model_placement } = formData;
 
@@ -153,6 +172,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
           <ProductDropFile
             updateStateFile={updateFile}
             dropFileType={"poster"}
+            resetFiles={resetFiles}
           />
         </FormGroup>
         <FormGroup>
@@ -166,6 +186,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
           <ProductDropFile
             updateStateFile={updateFile}
             dropFileType={"glbFile"}
+            resetFiles={resetFiles}
           />
         </FormGroup>
         <FormGroup>
@@ -179,6 +200,7 @@ const DataListSidebar = ({ show, handleSidebar, data }) => {
           <ProductDropFile
             updateStateFile={updateFile}
             dropFileType={"usdzFile"}
+            resetFiles={resetFiles}
           />
         </FormGroup>
         <FormGroup>
