@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import StatisticsCard from "../../components/@vuexy/statisticsCard/StatisticsCard";
 import { Row, Col, Spinner } from "reactstrap";
 import { ShoppingCart, Server, BarChart } from "react-feather";
@@ -12,18 +12,23 @@ const Home = () => {
   const api = useApi({ formData: false });
   const showMessage = useSnackbarStatus();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: [cacheKeys.dashboard],
     queryFn: () => api.getDashboardData(),
     onError: (error) => {
       showMessage(error?.message);
     },
   });
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   return (
     <div>
       <Row>
         <Col lg="4" sm="6">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <Spinner color="primary" />
           ) : (
             <StatisticsCard
@@ -37,7 +42,7 @@ const Home = () => {
           )}
         </Col>
         <Col lg="4" sm="6">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <Spinner color="primary" />
           ) : (
             <StatisticsCard
@@ -51,7 +56,7 @@ const Home = () => {
           )}
         </Col>
         <Col lg="4" sm="6">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <Spinner color="primary" />
           ) : (
             <StatisticsCard
@@ -65,7 +70,7 @@ const Home = () => {
           )}
         </Col>
       </Row>
-      <BarCharts topProducts={data?.topProducts}/>
+      <BarCharts topProducts={data?.topProducts} />
     </div>
   );
 };
