@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardBody, CardTitle } from "reactstrap";
+import { Card, CardBody } from "reactstrap";
 import { useDropzone } from "react-dropzone";
 import "../../assets/scss/plugins/extensions/dropzone.scss";
 
@@ -41,6 +41,12 @@ function BasicDropzone(props) {
     </div>
   ));
 
+  useEffect(() => {
+    if (props.resetFiles) {
+      setFiles([]);
+    }
+  }, [props.resetFiles]);
+
   useEffect(
     () => () => {
       // Make sure to revoke the data uris to avoid memory leaks
@@ -70,6 +76,7 @@ class ProductDropFile extends React.Component {
           <BasicDropzone
             updateStateFile={this.props.updateStateFile}
             dropFileType={this.props.dropFileType}
+            resetFiles={this.props.resetFiles}
           />
         </CardBody>
       </Card>
