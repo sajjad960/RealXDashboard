@@ -161,7 +161,6 @@ const ImageWithLoading = ({ src, alt }) => {
 const DataListConfig = () => {
   const api = useApi({ formData: false });
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
 
   const queryClient = useQueryClient();
   const showMessage = useSnackbarStatus();
