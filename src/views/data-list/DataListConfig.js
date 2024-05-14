@@ -1,17 +1,10 @@
-import React, { useState, useMemo } from "react";
-import {
-  Button,
-  Progress,
-  UncontrolledDropdown,
-  DropdownMenu,
-  DropdownToggle,
-  DropdownItem,
-  Input,
-} from "reactstrap";
+import React, { useState, useMemo, useEffect } from "react";
+import { Button, Input } from "reactstrap";
 import DataTable from "react-data-table-component";
 import classnames from "classnames";
 import ReactPaginate from "react-paginate";
 import { history } from "../../history";
+import { useLocation } from "react-router-dom";
 import {
   Edit,
   Trash,
@@ -22,7 +15,6 @@ import {
   ChevronRight,
 } from "react-feather";
 import Sidebar from "./DataListSidebar";
-import Chip from "../../components/@vuexy/chips/ChipComponent";
 import Checkbox from "../../components/@vuexy/checkbox/CheckboxesVuexy";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { cacheKeys } from "../../api/CacheKeys";
@@ -31,6 +23,7 @@ import useSnackbarStatus from "../../hooks/useSnackbarStatus";
 import { FormGroup } from "reactstrap";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import Spinner from "../../components/@vuexy/spinner/Loading-spinner";
+import AwesomeDebouncePromise from "awesome-debounce-promise";
 
 import "../../assets/scss/plugins/extensions/react-paginate.scss";
 import "../../assets/scss/pages/data-list.scss";
@@ -75,6 +68,14 @@ const ActionsComponent = (props) => {
 };
 
 const CustomHeader = (props) => {
+  const { name } = props.filterValues;
+  const debouncedHandleFilter = AwesomeDebouncePromise(props.handleFilter, 500);
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    const name = e.target.name;
+    debouncedHandleFilter(name, value);
+  };
+
   return (
     <div className="data-list-header d-flex justify-content-between flex-wrap">
       <div className="actions-left d-flex flex-wrap">
@@ -92,8 +93,10 @@ const CustomHeader = (props) => {
         <div className="filter-section">
           <Input
             type="text"
+            name="name"
+            // value={name}
             placeholder="Search By Product Name"
-            onChange={(e) => props.handleFilter(e)}
+            onChange={handleInputChange}
           />
         </div>
       </div>
@@ -157,33 +160,54 @@ const ImageWithLoading = ({ src, alt }) => {
 
 const DataListConfig = () => {
   const api = useApi({ formData: false });
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+
   const queryClient = useQueryClient();
   const showMessage = useSnackbarStatus();
-  const [allData, setAllData] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
-  const [value, setValue] = useState("");
-  const [rowsPerPage, setRowsPerPage] = useState(4);
   const [sidebar, setSidebar] = useState(false);
   const [currentData, setCurrentData] = useState(null);
-  const [selected, setSelected] = useState([]);
-  const [thumbView, setthumbView] = useState(false);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [sortIndex, setSortIndex] = useState([]);
-  const [addNew, setAddNew] = useState("");
   const [copyDetails, setcopyDetails] = useState({
     copied: false,
     rowId: "",
   });
+  const [filters, setFilters] = useState({});
 
-  const { data, isLoading } = useQuery({
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const initialFilters = {};
+    queryParams.forEach((value, key) => {
+      initialFilters[key] = value;
+    });
+    console.log("iam callijng", initialFilters);
+    setFilters(initialFilters);
+  }, [location.search]);
+
+  const handlePages = (data) => {
+    const totalProducts = data?.total;
+    const perPage = 10;
+    const calculatedPages = Math.ceil(totalProducts / perPage);
+    setTotalPages(calculatedPages);
+  };
+
+  const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: [cacheKeys.products],
-    queryFn: () => api.getProducts(),
+    queryFn: () => api.getProducts(filters),
+    onSuccess: (data) => {
+      console.log("pdata", data);
+      handlePages(data);
+    },
     onError: (error) => {
       showMessage(error?.message);
     },
   });
 
+  useEffect(() => {
+    refetch();
+  }, [filters, refetch]);
+  console.log(isLoading, "isloading");
   const { mutate: mutateUpdate } = useMutation(
     (body) => api.updateProduct(body),
     {
@@ -224,7 +248,6 @@ const DataListConfig = () => {
   );
 
   const memoizedData = useMemo(() => {
-    console.log("product data", data);
     // Expensive computation here
     return data;
   }, [data]);
@@ -366,71 +389,25 @@ const DataListConfig = () => {
     },
   ];
 
-  // Simulate Redux data
-  const dataList = {
-    data: [],
-    params: {
-      page: "2",
-      perPage: "4",
-    },
-    allData: [],
-    totalPages: 25,
-    filteredData: [],
-    totalRecords: 99,
-    sortIndex: [5, 8],
-  };
+  const handleFilter = async (name, value) => {
+    let updatedFilters = {};
+    if (value.trim() !== "") {
+      updatedFilters = {
+        ...filters,
+        [name]: value,
+        page: 1,
+      };
+    }
+    const queryString = new URLSearchParams(updatedFilters).toString();
+    history.push({ search: queryString });
 
-  // useEffect to simulate componentDidMount
-  // useEffect(() => {
-  //   // Simulate Redux actions
-  //   setData(dataList.data);
-  //   setAllData(dataList.allData);
-  //   setTotalPages(dataList.totalPages);
-  //   setCurrentPage(parseInt(dataList.params.page) - 1);
-  //   setRowsPerPage(parseInt(dataList.params.perPage));
-  //   setTotalRecords(dataList.totalRecords);
-  //   setSortIndex(dataList.sortIndex);
-  // }, [
-  //   dataList.allData,
-  //   dataList.data,
-  //   dataList.params.page,
-  //   dataList.params.perPage,
-  //   dataList.sortIndex,
-  //   dataList.totalPages,
-  //   dataList.totalRecords,
-  // ]);
-
-  // useEffect to simulate componentDidUpdate
-  // useEffect(() => {
-  //   if (thumbView) {
-  //     // Thumb view specific operations
-  //     setColumns([
-  //       {
-  //         name: "Image",
-  //         selector: "img",
-  //         minWidth: "220px",
-  //         cell: (row) => <img src={row.img} height="100" alt={row.name} />,
-  //       },
-  //       // Other column definitions...
-  //     ]);
-  //   }
-  // }, [thumbView]);
-
-  const handleFilter = (e) => {
-    // setValue(e.target.value);
-    // filterData(e.target.value);
-  };
-
-  const handleRowsPerPage = (value) => {
-    // let page = parsedFilter.page !== undefined ? parsedFilter.page : 1;
-    // history.push(`/data-list/list-view?page=${page}&perPage=${value}`);
-    // setRowsPerPage(value);
-    // getData({ page: parsedFilter.page, perPage: value });
+    setCurrentPage(0);
+    setFilters(updatedFilters);
   };
 
   const handleSidebar = (boolean, addNew = false) => {
     setSidebar(boolean);
-    if (addNew === true) setCurrentData(null);
+    // if (addNew === true) setCurrentData(null);
   };
 
   const handleDelete = (row) => {
@@ -448,14 +425,20 @@ const DataListConfig = () => {
   };
 
   const handlePagination = (page) => {
-    // let perPage = parsedFilter.perPage !== undefined ? parsedFilter.perPage : 4;
-    // history.push(`products?page=${page.selected + 1}&perPage=${perPage}`);
-    // getData({ page: page.selected + 1, perPage: perPage });
-    // setCurrentPage(page.selected);
+    setCurrentPage(page.selected);
+    const updatedFilterWithPage = {
+      ...filters,
+      page: page?.selected + 1 ?? 1,
+    };
+
+    console.log("updated page filter", updatedFilterWithPage);
+    const queryString = new URLSearchParams(updatedFilterWithPage).toString();
+    history.push({ search: queryString });
+
+    setFilters(updatedFilterWithPage);
   };
 
   const updateStatus = (id, status) => {
-    console.log("update sta", id, status);
     const body = {
       status: Number(status),
       product_id: id,
@@ -464,74 +447,74 @@ const DataListConfig = () => {
     mutateUpdate(body);
   };
 
-  if (isLoading) {
-    return <Spinner />;
-  }
-
   return (
-    <div className={`data-list ${thumbView ? "thumb-view" : "list-view"}`}>
+    <div className={`data-list list-view}`}>
       {/* DataTable component with required props */}
-      <DataTable
-        columns={columns}
-        data={value.length ? allData : memoizedData?.data}
-        pagination
-        paginationServer
-        paginationComponent={() => (
-          <ReactPaginate
-            previousLabel={<ChevronLeft size={15} />}
-            nextLabel={<ChevronRight size={15} />}
-            breakLabel="..."
-            breakClassName="break-me"
-            pageCount={totalPages}
-            containerClassName="vx-pagination separated-pagination pagination-end pagination-sm mb-0 mt-2"
-            activeClassName="active"
-            // forcePage={
-            //   props.parsedFilter.page
-            //     ? parseInt(props.parsedFilter.page - 1)
-            //     : 0
-            // }
-            onPageChange={(page) => handlePagination(page)}
-          />
-        )}
-        noHeader
-        subHeader
-        // selectableRows
-        responsive
-        pointerOnHover
-        selectableRowsHighlight
-        // onSelectedRowsChange={(data) =>
-        //   this.setState({ selected: data.selectedRows })
-        // }
-        customStyles={selectedStyle}
-        subHeaderComponent={
-          <CustomHeader
-            handleSidebar={handleSidebar}
-            handleFilter={handleFilter}
-            handleRowsPerPage={handleRowsPerPage}
-            rowsPerPage={rowsPerPage}
-            total={totalRecords}
-            index={sortIndex}
-          />
-        }
-        sortIcon={<ChevronDown />}
-        selectableRowsComponent={Checkbox}
-        selectableRowsComponentProps={{
-          color: "primary",
-          icon: <Check className="vx-icon" size={12} />,
-          label: "",
-          size: "sm",
-        }}
-      />
+      {isLoading || isFetching ? (
+        <div className="mt-lg-5">
+          <Spinner />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={memoizedData?.data ?? []}
+          pagination
+          paginationServer
+          paginationComponent={() => (
+            <ReactPaginate
+              previousLabel={<ChevronLeft size={15} />}
+              nextLabel={<ChevronRight size={15} />}
+              breakLabel="..."
+              breakClassName="break-me"
+              pageCount={totalPages}
+              containerClassName="vx-pagination separated-pagination pagination-center pagination-sm mb-0 mt-2"
+              activeClassName="active"
+              forcePage={currentPage}
+              onPageChange={(page) => handlePagination(page)}
+            />
+          )}
+          noHeader
+          subHeader
+          // selectableRows
+          responsive
+          pointerOnHover
+          selectableRowsHighlight
+          // onSelectedRowsChange={(data) =>
+          //   this.setState({ selected: data.selectedRows })
+          // }
+          customStyles={selectedStyle}
+          subHeaderComponent={
+            <CustomHeader
+              handleSidebar={handleSidebar}
+              handleFilter={handleFilter}
+              filterValues={filters}
+              // handleRowsPerPage={handleRowsPerPage}
+              // rowsPerPage={rowsPerPage}
+              // total={totalRecords}
+              // index={sortIndex}
+            />
+          }
+          sortIcon={<ChevronDown />}
+          selectableRowsComponent={Checkbox}
+          selectableRowsComponentProps={{
+            color: "primary",
+            icon: <Check className="vx-icon" size={12} />,
+            label: "",
+            size: "sm",
+          }}
+        />
+      )}
+
       <Sidebar
         show={sidebar}
         data={currentData}
         // updateData={this.props.updateData}
         // addData={this.props.addData}
         handleSidebar={handleSidebar}
-        thumbView={thumbView}
+        // thumbView={thumbView}
         // getData={this.props.getData}
         // dataParams={this.props.parsedFilter}
-        addNew={addNew}
+        // addNew={addNew}
       />
       <div
         className={classnames("data-list-overlay", {

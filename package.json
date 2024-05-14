@@ -11,6 +11,7 @@
     "auth0-js": "^9.12.2",
     "auto-bind": "^5.0.1",
     "availity-reactstrap-validation": "^2.6.1",
+    "awesome-debounce-promise": "^2.1.0",
     "axios": "^0.19.2",
     "axios-mock-adapter": "~1.17.0",
     "babel-plugin-react-intl": "^5.1.18",
